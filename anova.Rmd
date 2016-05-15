@@ -1,0 +1,233 @@
+---
+title: "ANOVA"
+author: 陆诚林 徐轶舟 郑宇婧
+date: May 11, 2016
+output:
+  ioslides_presentation:
+    widescreen: true
+    transition: faster
+---
+
+
+
+## usage(可以之后删掉)
+- 'f' enable fullscreen mode
+- 'w' toggle widescreen mode
+- 'o' enable overview mode
+- 'h' enable code highlight mode
+- 'p' show presenter notes
+
+----
+
+## outline(可以之后删掉)
+
+(1)Basic function
+
+avo();summery();#One-way ANOVA;
+
+(2)Optional
+
+manova()
+
+Two-way ANOVA; Interaction in ANOVA analysis;
+
+(3)Review
+
+Use box plots and line plots to visualize group differences.
+
+interaction.plot()
+
+plotmeans()
+
+----
+
+# One-Way ANOVA
+
+----
+
+## Sample
+A class is divided up into study groups with different vitamin treatment. All members of a class take a test. Data are the height of the students divided up by treatment.
+
+| Treatment 1 | Treatment 2 | Treatment 3 | Treatment 4 |
+| :---------: | :---------: | :---------: | :---------: |
+|     89      |     88      |     63      |     59      |
+|     85      |     72      |     57      |     42      |
+|     98      |     63      |     43      |     41      |
+|     80      |     82      |     60      |     51      |
+|     96      |     75      |             |             |
+
+----
+
+## Data
+```{R}
+df1 <- data.frame(height=c(85, 89, 96, 80, 98), group="treat1")
+df2 <- data.frame(height=c(72, 88, 75, 82, 63), group="treat2")
+df3 <- data.frame(height=c(43, 57, 63, 60)    , group="treat3")
+df4 <- data.frame(height=c(51, 42, 59, 41)    , group="treat4")
+mydata <- rbind(df1,df2,df3,df4)
+mydata
+```
+
+----
+
+## Plot the data
+
+```{R}
+plot(height~group, data=mydata)
+```
+
+----
+
+## Test the homogeneity of variance
+
+**Null hypothesis**: all of the groups have the same scores.
+```{R}
+bartlett.test(height~group, data=mydata)
+```
+p-value > 0.05, and accept null hypothesis.
+
+----
+
+## One-Way ANOVA
+```{R}
+summary(aov(height~group, data=mydata))
+```
+
+----
+
+# Two-Way ANOVA
+
+----
+
+## Sample
+A new fertilizer has been developed to increase the yield on crops, and the makers of the fertilizer want to better understand which of the three formulations (blends) of this fertilizer are most effective for wheat, corn, soy beans and rice (crops). They test each of the three blends on one sample of each of the four types of crops. The crop yields for the 12 combinations are as shown in the following figure. Run an `F test` to test the effect of fertilizer and crops.
+
+|         | Wheat | Corn | Soy  | Rice |
+| :-----: | :---: | :--: | :--: | :--: |
+| Blend X |  123  | 138  | 110  | 151  |
+| Blend Y |  145  | 165  | 140  | 167  |
+| Blend Z |  156  | 176  | 185  | 175  |
+
+----
+
+## Data
+
+```{R}
+blendx <- c(123, 138, 110, 151)
+blendy <- c(145, 165, 140, 167)
+blendz <- c(156, 176, 185, 175)
+fulldata <- c(blendx, blendy, blendz)
+# levels
+crops <- gl(4,1,length=12, labels=c("Wheat","Corn","Soy","Rice"))
+crops
+blend <- gl(3,4,length=12, labels=c("Blend X","Blend Y","Blend Z") )
+blend
+```
+
+----
+
+## Data
+
+```{R}
+mydata <- data.frame(yields=fulldata, crops, blend)
+mydata
+```
+
+----
+
+## Test the homogeneity of variance
+
+**Null hypothesis**: all populations variances are equal.
+
+```{R, eval=FALSE}
+bartlett.test(split(fulldata,list(crops,blend)))
+```
+
+<div class="red2">"there must be at least 2 observations in each group."</div>
+
+so just jump this step.
+
+----
+
+## Two-Way ANOVA
+
+```{R}
+summary(aov(yields~crops+blend,data=mydata))
+```
+
+- p-value(crops) > 0.05, fail to reject null hypothesis.
+- p-value(blend) < 0.05, reject null hypothesis, fertilizers have different effect on crops.
+
+----
+
+## Diagnostic Plots
+```{R}
+layout(matrix(c(1,2,3,4),2,2)) # optional layout
+plot( aov(yields~crops+blend,data=mydata) )
+```
+
+----
+
+## Visualizing Results
+```{R}
+# Two-way Interaction Plot 
+interaction.plot(mydata$crops, mydata$blend, mydata$yields, type="b", col=c(1:3))
+```
+
+----
+
+# MANOVA
+
+----
+
+If there is more than one dependent (outcome) variable, you can test them simultaneously using a **multivariate analysis of variance** (MANOVA). In the following example, let Y be a matrix whose columns are the dependent variables.
+
+```{R, eval=FALSE}
+# 2x2 Factorial MANOVA with 3 Dependent Variables. 
+Y <- cbind(y1,y2,y3)
+fit <- manova(Y ~ A*B)
+summary(fit, test="Pillai")
+```
+
+Other test options are "Wilks", "Hotelling-Lawley", and "Roy". Use summary.aov( ) to get univariate statistics. TukeyHSD( ) and plot( ) will not work with a MANOVA fit. Run each dependent variable separately to obtain them. Like ANOVA, MANOVA results in R are based on Type I SS. To obtain Type III SS, vary the order of variables in the model and rerun the analyses. For example, fit y~A*B for the TypeIII B effect and y~B*A for the Type III A effect.
+
+----
+
+# Exercise
+
+----
+
+## Exercise 1
+A manufactory produce mechanical parts, here is a batch of these production and the size (cm) are listed below. Is there a difference (a=0.05) beween these groups?
+
+----
+
+| Gp 1 | Gp 2 | Gp 3 | Gp 4 |
+| :--: | :--: | :--: | :--: |
+|  85  |  72  |  43  |  51  |
+|  89  |  88  |  57  |  42  |
+|  96  |  75  |  63  |  59  |
+|  80  |  82  |  60  |  41  |
+|  98  |  63  |      |      |
+
+----
+
+## Exercise 2
+Run Anova to test the effect of age-range,race and their interaction on  exercise time(hour) per month.
+
+----
+
+| Race/Age | 0~16 | 17~35 | 35~50 |
+| :------: | :--: | :---: | :---: |
+|  Black   |  40  |  32   |  30   |
+|          |  36  |  29   |  35   |
+|          |  38  |  36   |  33   |
+|  Yellow  |  24  |  20   |  18   |
+|          |  21  |  29   |  26   |
+|          |  20  |  25   |  26   |
+|  White   |  22  |  20   |  18   |
+|          |  18  |  18   |  14   |
+|          |  16  |  19   |  19   |
+
+ 
+
